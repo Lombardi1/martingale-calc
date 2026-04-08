@@ -51,23 +51,24 @@ export default function App() {
     setGoldSt("loading");
     const apis = [
       async () => {
-        const r = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?interval=1m&range=1d");
+        const r = await fetch("https://api.bybit.com/v5/market/tickers?category=spot&symbol=XAUTUSDT");
         const d = await r.json();
-        const p = d?.chart?.result?.[0]?.meta?.regularMarketPrice;
-        if (!p || isNaN(p)) throw new Error("no price");
-        return p;
+        const p = d?.result?.list?.[0]?.lastPrice;
+        if (!p) throw new Error("no price");
+        return Number(p);
       },
       async () => {
-        const r = await fetch("https://api.frankfurter.app/latest?from=XAU&to=USD");
+        const r = await fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/xau.json");
         const d = await r.json();
-        if (!d.rates?.USD) throw new Error("no rate");
-        return d.rates.USD;
+        const p = d?.xau?.usd;
+        if (!p || p < 500) throw new Error("bad rate");
+        return p;
       },
     ];
     for (const api of apis) {
       try {
         const p = await api();
-        if (p && !isNaN(Number(p)) && Number(p) > 500) {
+        if (p && !isNaN(p) && p > 500 && p < 15000) {
           setPrice(Number(p).toFixed(2));
           setUpdated(new Date());
           setGoldSt("live");
@@ -120,8 +121,8 @@ export default function App() {
       <div style={{ background: "#0d1424", borderBottom: "1px solid #1f2937", padding: "15px 18px", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-.02em" }}>⚡ Martingale Calc</div>
-            <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>XAUUSD · Degressive</div>
+            <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-.02em" }}>â¡ Martingale Calc</div>
+            <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>XAUUSD Â· Degressive</div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 5, justifyContent: "flex-end" }}>
@@ -145,7 +146,7 @@ export default function App() {
               Margin/lot @ 1:{lev} <span style={{ color: "#d97706", fontWeight: 600 }}>${mpl.toFixed(2)}</span>
             </div>
           </div>
-          <button onClick={fetchGold} style={{ background: "rgba(251,191,36,.1)", border: "1px solid #78350f", borderRadius: 9, padding: "7px 11px", color: "#fbbf24", fontSize: 18, cursor: "pointer", lineHeight: 1, WebkitTapHighlightColor: "transparent" }}>↻</button>
+          <button onClick={fetchGold} style={{ background: "rgba(251,191,36,.1)", border: "1px solid #78350f", borderRadius: 9, padding: "7px 11px", color: "#fbbf24", fontSize: 18, cursor: "pointer", lineHeight: 1, WebkitTapHighlightColor: "transparent" }}>â»</button>
         </div>
         <div style={{ marginTop: 10 }}>
           <div className="lbl">Override manuale</div>
@@ -153,9 +154,9 @@ export default function App() {
         </div>
       </div>
       <div style={{ display: "flex", gap: 5, margin: "14px 14px 0", background: "#111827", borderRadius: 11, padding: 4 }}>
-        <button className={"tb" + (tab === "calc" ? " on" : "")} onClick={() => setTab("calc")}>⚙ Parametri</button>
+        <button className={"tb" + (tab === "calc" ? " on" : "")} onClick={() => setTab("calc")}>â Parametri</button>
         <button className={"tb" + (tab === "table" ? " on" : "")} onClick={() => setTab("table")} disabled={!rows}>
-          📊 Risultati{rows ? ` (${ms} safe)` : ""}
+          ð Risultati{rows ? ` (${ms} safe)` : ""}
         </button>
       </div>
       {tab === "calc" && (
@@ -191,7 +192,7 @@ export default function App() {
             <div><div className="lbl">Step base (pts)</div><input type="number" value={stepBase} inputMode="decimal" onChange={e => setStepBase(e.target.value)} style={inp} /></div>
             <div><div className="lbl">Step mult x</div><input type="number" value={stepMult} inputMode="decimal" step="0.01" onChange={e => setStepMult(e.target.value)} style={inp} /></div>
           </div>
-          <button className="btn" onClick={calculate}>⚡ Calcola livelli</button>
+          <button className="btn" onClick={calculate}>â¡ Calcola livelli</button>
         </div>
       )}
       {tab === "table" && rows && (
@@ -199,7 +200,7 @@ export default function App() {
           <div style={{ margin: "0 14px 14px", background: "#0d1424", border: `2px solid ${bannerColor}`, borderRadius: 16, padding: "22px 18px", textAlign: "center" }}>
             <div style={{ fontSize: 76, fontWeight: 800, color: bannerColor, lineHeight: 1, letterSpacing: "-.03em" }}>{ms}</div>
             <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 5, textTransform: "uppercase", letterSpacing: ".1em" }}>Livelli sicuri massimi</div>
-            <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3 }}>XAU ${Number(price).toLocaleString()} · 1:{lev} · ${Number(equity).toLocaleString()} eq.</div>
+            <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3 }}>XAU ${Number(price).toLocaleString()} Â· 1:{lev} Â· ${Number(equity).toLocaleString()} eq.</div>
           </div>
           {safeRow && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, margin: "0 14px 14px" }}>
@@ -225,7 +226,7 @@ export default function App() {
               </tr></thead>
               <tbody>{rows.map(r => (
                 <tr key={r.i} className={(r.safe ? "rs" : "rd") + (r.i === ms ? " rmx" : "")}>
-                  <td style={{ fontWeight: r.i === ms ? 800 : 400, paddingLeft: 14 }}>{r.i}{r.i === ms ? "★" : ""}</td>
+                  <td style={{ fontWeight: r.i === ms ? 800 : 400, paddingLeft: 14 }}>{r.i}{r.i === ms ? "â" : ""}</td>
                   <td>{r.lot.toFixed(3)}</td>
                   <td>{r.cumLots.toFixed(3)}</td>
                   <td style={{ color: "#6b7280" }}>{r.step.toFixed(0)}</td>
@@ -238,13 +239,13 @@ export default function App() {
             </table>
           </div>
           <div style={{ margin: "0 14px 12px", padding: "9px 13px", background: "#111827", borderRadius: 9, border: "1px solid #1f2937", fontSize: 10, color: "#6b7280", display: "flex", flexWrap: "wrap", gap: 7 }}>
-            <span>Lot x{lotMult} (1-{Number(degFrom)-1})</span><span>·</span>
-            <span>Deg. x{degMult} da lv.{degFrom}</span><span>·</span>
+            <span>Lot x{lotMult} (1-{Number(degFrom)-1})</span><span>Â·</span>
+            <span>Deg. x{degMult} da lv.{degFrom}</span><span>Â·</span>
             <span>Step x{stepMult}/lv</span>
           </div>
           <div style={{ padding: "0 14px" }}>
             <button className="btn" onClick={() => setTab("calc")} style={{ background: "linear-gradient(135deg,#1f2937,#374151)", boxShadow: "none" }}>
-              ← Modifica parametri
+              â Modifica parametri
             </button>
           </div>
         </div>
