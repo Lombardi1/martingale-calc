@@ -185,9 +185,9 @@ export default function App() {
 
       {/* TABS */}
       <div style={{ display: "flex", gap: 5, margin: "14px 14px 0", background: "#111827", borderRadius: 11, padding: 4 }}>
-        <button className={"tb" + (tab === "calc" ? " on" : "")} onClick={() => setTab("calc")}>â Parametri</button>
+        <button className={"tb" + (tab === "calc" ? " on" : "")} onClick={() => setTab("calc")}>Ã¢ÂÂ Parametri</button>
         <button className={"tb" + (tab === "table" ? " on" : "")} onClick={() => setTab("table")} disabled={!rows}>
-          ð Risultati{rows ? ` (${ms} safe)` : ""}
+          Ã°ÂÂÂ Risultati{rows ? ` (${ms} safe)` : ""}
         </button>
       </div>
 
@@ -225,7 +225,7 @@ export default function App() {
             <div><div className="lbl">Step base (pts)</div><input type="number" value={stepBase} inputMode="decimal" onChange={e => setStepBase(e.target.value)} style={inp} /></div>
             <div><div className="lbl">Step mult x</div><input type="number" value={stepMult} inputMode="decimal" step="0.01" onChange={e => setStepMult(e.target.value)} style={inp} /></div>
           </div>
-          <button className="btn" onClick={calculate}>â¡ Calcola livelli</button>
+          <button className="btn" onClick={calculate}>Ã¢ÂÂ¡ Calcola livelli</button>
         </div>
       )}
 
@@ -235,7 +235,7 @@ export default function App() {
           <div style={{ margin: "0 14px 14px", background: "#0d1424", border: `2px solid ${bannerColor}`, borderRadius: 16, padding: "22px 18px", textAlign: "center" }}>
             <div style={{ fontSize: 76, fontWeight: 800, color: bannerColor, lineHeight: 1, letterSpacing: "-.03em" }}>{ms}</div>
             <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 5, textTransform: "uppercase", letterSpacing: ".1em" }}>Livelli sicuri massimi</div>
-            <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3 }}>XAU ${Number(price).toLocaleString()} Â· 1:{lev} Â· ${Number(equity).toLocaleString()} eq.</div>
+            <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3 }}>XAU ${Number(price).toLocaleString()} ÃÂ· 1:{lev} ÃÂ· ${Number(equity).toLocaleString()} eq.</div>
           </div>
           {safeRow && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, margin: "0 14px 14px" }}>
@@ -261,7 +261,7 @@ export default function App() {
               </tr></thead>
               <tbody>{rows.map(r => (
                 <tr key={r.i} className={(r.safe ? "rs" : "rd") + (r.i === ms ? " rmx" : "")}>
-                  <td style={{ fontWeight: r.i === ms ? 800 : 400, paddingLeft: 14 }}>{r.i}{r.i === ms ? "â" : ""}</td>
+                  <td style={{ fontWeight: r.i === ms ? 800 : 400, paddingLeft: 14 }}>{r.i}{r.i === ms ? "Ã¢ÂÂ" : ""}</td>
                   <td>{r.lot.toFixed(3)}</td>
                   <td>{r.cumLots.toFixed(3)}</td>
                   <td style={{ color: "#6b7280" }}>{r.step.toFixed(0)}</td>
@@ -274,13 +274,13 @@ export default function App() {
             </table>
           </div>
           <div style={{ margin: "0 14px 12px", padding: "9px 13px", background: "#111827", borderRadius: 9, border: "1px solid #1f2937", fontSize: 10, color: "#6b7280", display: "flex", flexWrap: "wrap", gap: 7 }}>
-            <span>Lot x{lotMult} (1-{Number(degFrom)-1})</span><span>Â·</span>
-            <span>Deg. x{degMult} da lv.{degFrom}</span><span>Â·</span>
+            <span>Lot x{lotMult} (1-{Number(degFrom)-1})</span><span>ÃÂ·</span>
+            <span>Deg. x{degMult} da lv.{degFrom}</span><span>ÃÂ·</span>
             <span>Step x{stepMult}/lv</span>
           </div>
           <div style={{ padding: "0 14px" }}>
             <button className="btn" onClick={() => setTab("calc")} style={{ background: "linear-gradient(135deg,#1f2937,#374151)", boxShadow: "none" }}>
-              â Modifica parametri
+              Ã¢ÂÂ Modifica parametri
             </button>
           </div>
         </div>
