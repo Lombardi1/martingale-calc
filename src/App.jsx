@@ -47,7 +47,7 @@ export default function App() {
   const [lotMult, setLotMult] = useState("2");
   const [degFrom, setDegFrom] = useState("5");
   const [degMult, setDegMult] = useState("1.75");
-  const [stepBase, setStepBase] = useState("130");
+  const [stepBase, setStepBase] = useState("1300");
   const [stepMult, setStepMult] = useState("1.05");
   const [config, setConfig] = useState("OnlyBuy");
   const [rows, setRows] = useState(null);
