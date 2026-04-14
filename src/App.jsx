@@ -10,8 +10,8 @@ const CONFIGS = ["OnlyBuy", "OnlySell", "BuyAndSell"];
 const LOT_SIZE = 100;
 const MC_LEVEL = 75;
 const LIQ_LEVEL = 50;
-const CORS = "https://api.allorigins.win/raw?url=";
-const JBLANKED = "https://www.jblanked.com/news/api/forex-factory/calendar/week/?currency=USD";
+const FF_PROXY = "https://qhabwagcsvvluyvfztmp.supabase.co/functions/v1/ff-calendar-proxy";
+const R2J = "https://api.rss2json.com/v1/api.json?rss_url=";
 const RSS_FEEDS = [
   { name: "Reuters", url: "https://feeds.reuters.com/reuters/businessNews" },
   { name: "MarketWatch", url: "https://feeds.marketwatch.com/marketwatch/topstories/" },
@@ -186,7 +186,7 @@ function NewsPage() {
   const fetchCalendar = useCallback(async () => {
     setCalStatus("loading");
     try {
-      const r = await fetch(CORS + encodeURIComponent(JBLANKED));
+      const r = await fetch(FF_PROXY);
       const data = await r.json();
       const events = Array.isArray(data) ? data : [];
       const filtered = events.filter(e => ["high","medium"].includes((e.impact||"").toLowerCase()));
@@ -202,7 +202,7 @@ function NewsPage() {
     const all = [];
     for (const feed of RSS_FEEDS) {
       try {
-        const r = await fetch(CORS + encodeURIComponent(feed.url));
+        const r = await fetch(R2J + encodeURIComponent(feed.url) + "&count=20");
         const xml = await r.text();
         parseRSS(xml).forEach(i => all.push({ ...i, source: feed.name }));
       } catch {}
