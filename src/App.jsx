@@ -17,6 +17,14 @@ function getStatus(ml) {
   if (ml >= LIQ_LEVEL) return "mcall";
   return "liq";
 }
+// Calcola quanti punti di movimento avverso prima che ML scenda sotto LIQ_LEVEL
+// equity - (loss + pts * cumLots) = LIQ_LEVEL/100 * margin
+// pts = (equity - loss - LIQ_LEVEL/100 * margin) / cumLots
+function ptsToLiq(eq, loss, margin, cumLots) {
+  if (cumLots <= 0) return 0;
+  const pts = (eq - loss - (LIQ_LEVEL / 100) * margin) / cumLots;
+  return pts;
+}
 function calcLevels(eq, price, lev, startLot, lotMult, degFrom, degMult, stepBase, stepMult) {
   const mpl = marginPerLot(price, lev);
   const rows = [];
@@ -26,11 +34,14 @@ function calcLevels(eq, price, lev, startLot, lotMult, degFrom, degMult, stepBas
     const margin = cumLots * mpl;
     if (i > 1) loss = parseFloat((loss + step * (cumLots - lot)).toFixed(2));
     const free = eq - loss;
+    // Riesce ad aprire? free margin > margine richiesto per questo livello (solo lotto aggiunto)
+    const canOpen = free >= (lot * mpl);
     const ml = margin > 0 ? (free / margin) * 100 : 0;
     const status = getStatus(ml);
     const safe = status === "safe";
     if (!safe) calls++;
-    rows.push({ i, lot: parseFloat(lot.toFixed(4)), cumLots, margin: parseFloat(margin.toFixed(2)), loss, free: parseFloat(free.toFixed(2)), ml: parseFloat(ml.toFixed(1)), step: parseFloat(step.toFixed(1)), safe, status });
+    const pts = canOpen ? ptsToLiq(eq, loss, margin, cumLots) : null;
+    rows.push({ i, lot: parseFloat(lot.toFixed(4)), cumLots, margin: parseFloat(margin.toFixed(2)), loss, free: parseFloat(free.toFixed(2)), ml: parseFloat(ml.toFixed(1)), step: parseFloat(step.toFixed(1)), safe, status, canOpen, pts });
     if (calls >= 2) break;
     const nm = (i + 1) >= degFrom ? degMult : lotMult;
     lot = parseFloat((lot * nm).toFixed(4));
@@ -115,13 +126,14 @@ export default function App() {
         .btn:active{transform:scale(.97);box-shadow:0 2px 10px rgba(59,130,246,.2)}
         .rs td{color:#22c55e}.rmc td{color:#f59e0b}.rd td{color:#ef4444}
         .rmx{background:rgba(59,130,246,.08)!important}
-        td,th{padding:9px 8px;white-space:nowrap}
-        th{font-size:10px;color:#4b5563;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+        td,th{padding:8px 6px;white-space:nowrap}
+        th{font-size:9px;color:#4b5563;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
         tbody tr{border-top:1px solid #111827}
         tbody tr:hover{background:rgba(255,255,255,.02)}
         .bs{background:#052e16;color:#22c55e;border:1px solid #14532d;border-radius:4px;padding:2px 5px;font-size:9px;font-weight:700;letter-spacing:.03em}
         .bmc{background:#1c1200;color:#f59e0b;border:1px solid #78350f;border-radius:4px;padding:2px 5px;font-size:9px;font-weight:700;letter-spacing:.03em}
         .bd{background:#1c0a0a;color:#ef4444;border:1px solid #7f1d1d;border-radius:4px;padding:2px 5px;font-size:9px;font-weight:700;letter-spacing:.03em}
+        .bno{background:#111827;color:#6b7280;border:1px solid #1f2937;border-radius:4px;padding:2px 5px;font-size:9px;font-weight:700;letter-spacing:.03em}
         .su{animation:su .3s ease-out}
         @keyframes su{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         .pu{animation:pu 1.5s infinite}
@@ -138,9 +150,7 @@ export default function App() {
       <div style={{ background: "#0a0f1a", borderBottom: "1px solid #111827", padding: "14px 18px", position: "sticky", top: 0, zIndex: 50, backdropFilter: "blur(10px)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 32, height: 32, background: "linear-gradient(135deg,#b8860b,#ffd700)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
-              {"⚡"}
-            </div>
+            <div style={{ width: 32, height: 32, background: "linear-gradient(135deg,#b8860b,#ffd700)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>{"⚡"}</div>
             <div>
               <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-.02em" }}>Martingale Calc</div>
               <div style={{ fontSize: 10, color: "#4b5563", marginTop: 1, letterSpacing: ".05em" }}>XAUUSD {"·"} Degressive</div>
@@ -167,7 +177,7 @@ export default function App() {
               {Number(price || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
             <div style={{ fontSize: 11, color: "#6b5a2a", marginTop: 5 }}>
-              Margine/lot @ 1:{lev} {<span style={{ color: "#d97706", fontWeight: 700 }}>{mpl.toFixed(2)}</span>}
+              Margine/lot @ 1:{lev} <span style={{ color: "#d97706", fontWeight: 700 }}>{mpl.toFixed(2)}</span>
             </div>
           </div>
           <button className="rfbtn" onClick={fetchGold}>{"↻"}</button>
@@ -190,10 +200,7 @@ export default function App() {
       {tab === "calc" && (
         <div style={{ padding: "12px 12px 120px", display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <div className="card">
-              <div className="lbl">Equity ($)</div>
-              <input type="number" value={equity} inputMode="decimal" onChange={e => setEquity(e.target.value)} style={inp} />
-            </div>
+            <div className="card"><div className="lbl">Equity ($)</div><input type="number" value={equity} inputMode="decimal" onChange={e => setEquity(e.target.value)} style={inp} /></div>
             <div className="card">
               <div className="lbl">Leverage</div>
               <select value={lev} onChange={e => setLev(Number(e.target.value))} style={{ ...inp, cursor: "pointer", appearance: "none", backgroundImage: selArrow, backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}>
@@ -201,35 +208,30 @@ export default function App() {
               </select>
             </div>
           </div>
-
           <div className="card">
             <div className="lbl">Configuration</div>
             <select value={config} onChange={e => setConfig(e.target.value)} style={{ ...inp, cursor: "pointer", appearance: "none", backgroundImage: selArrow, backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}>
               {CONFIGS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-
           <div className="divider" />
           <div className="sec">Lot Sizing</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div className="card"><div className="lbl">Start Lot</div><input type="number" value={startLot} inputMode="decimal" step="0.01" onChange={e => setStartLot(e.target.value)} style={inp} /></div>
             <div className="card"><div className="lbl">Lot Mult (1-{Number(degFrom)-1})</div><input type="number" value={lotMult} inputMode="decimal" step="0.1" onChange={e => setLotMult(e.target.value)} style={inp} /></div>
           </div>
-
           <div className="divider" />
           <div className="sec">Degressive Martingale</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div className="card"><div className="lbl">Da livello</div><input type="number" value={degFrom} inputMode="decimal" onChange={e => setDegFrom(e.target.value)} style={inp} /></div>
             <div className="card"><div className="lbl">Moltiplicatore</div><input type="number" value={degMult} inputMode="decimal" step="0.05" onChange={e => setDegMult(e.target.value)} style={inp} /></div>
           </div>
-
           <div className="divider" />
           <div className="sec">Grid Step</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div className="card"><div className="lbl">Step base (pts)</div><input type="number" value={stepBase} inputMode="decimal" onChange={e => setStepBase(e.target.value)} style={inp} /></div>
             <div className="card"><div className="lbl">Step mult</div><input type="number" value={stepMult} inputMode="decimal" step="0.01" onChange={e => setStepMult(e.target.value)} style={inp} /></div>
           </div>
-
           <button className="btn" onClick={calculate} style={{ marginTop: 4 }}>{"⚡"} Calcola livelli</button>
         </div>
       )}
@@ -260,19 +262,25 @@ export default function App() {
           )}
 
           {/* LEGEND */}
-          <div style={{ margin: "0 12px 10px", padding: "8px 12px", background: "#0d1424", borderRadius: 8, border: "1px solid #111827", fontSize: 10, color: "#4b5563", display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ margin: "0 12px 10px", padding: "8px 12px", background: "#0d1424", borderRadius: 8, border: "1px solid #111827", fontSize: 10, color: "#4b5563", display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
             <span><span className="bs">SAFE</span> ML &gt; {MC_LEVEL}%</span>
-            <span><span className="bmc">M.CALL</span> ML {LIQ_LEVEL}–{MC_LEVEL}%</span>
+            <span><span className="bmc">M.CALL</span> {LIQ_LEVEL}–{MC_LEVEL}%</span>
             <span><span className="bd">LIQ</span> ML &lt; {LIQ_LEVEL}%</span>
+            <span><span className="bno">NO OPEN</span> margin insuff.</span>
           </div>
 
           <div style={{ overflowX: "auto", marginBottom: 10 }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 480 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, minWidth: 520 }}>
               <thead>
                 <tr style={{ background: "#0a0f1a" }}>
                   <th style={{ textAlign: "left", paddingLeft: 12 }}>#</th>
-                  <th>Lot</th><th>Tot</th><th>Step</th><th>Margin</th><th>Loss</th><th>Lvl%</th>
-                  <th style={{ paddingRight: 12 }}>St.</th>
+                  <th>Lot</th>
+                  <th>Tot</th>
+                  <th>Margin</th>
+                  <th>Loss</th>
+                  <th>ML%</th>
+                  <th style={{ color: "#3b82f6" }}>Apre?</th>
+                  <th style={{ color: "#ef4444", paddingRight: 12 }}>Pts→Liq</th>
                 </tr>
               </thead>
               <tbody>
@@ -281,12 +289,14 @@ export default function App() {
                     <td style={{ fontWeight: r.i === ms ? 800 : 400, paddingLeft: 12 }}>{r.i}{r.i === ms ? " ★" : ""}</td>
                     <td>{r.lot.toFixed(3)}</td>
                     <td>{r.cumLots.toFixed(3)}</td>
-                    <td style={{ color: "#4b5563" }}>{r.step.toFixed(0)}</td>
                     <td>${r.margin.toFixed(0)}</td>
                     <td>${r.loss.toFixed(0)}</td>
                     <td style={{ fontWeight: 700 }}>{r.ml.toFixed(0)}%</td>
+                    <td>{r.canOpen ? <span className="bs">SÌ</span> : <span className="bno">NO</span>}</td>
                     <td style={{ paddingRight: 12 }}>
-                      {r.status === "safe" ? <span className="bs">SAFE</span> : r.status === "mcall" ? <span className="bmc">M.CALL</span> : <span className="bd">LIQ</span>}
+                      {r.canOpen && r.pts !== null
+                        ? <span style={{ fontWeight: 700, color: r.pts > 500 ? "#22c55e" : r.pts > 0 ? "#f59e0b" : "#ef4444" }}>{r.pts > 0 ? r.pts.toFixed(0) : "≤0"}</span>
+                        : <span style={{ color: "#374151" }}>—</span>}
                     </td>
                   </tr>
                 ))}
@@ -295,10 +305,8 @@ export default function App() {
           </div>
 
           <div style={{ margin: "0 12px 10px", padding: "8px 12px", background: "#0d1424", borderRadius: 8, border: "1px solid #111827", fontSize: 10, color: "#4b5563", display: "flex", flexWrap: "wrap", gap: 6 }}>
-            <span>Lot x{lotMult} (lv 1-{Number(degFrom)-1})</span>
-            <span>{"·"}</span>
-            <span>Deg. x{degMult} da lv.{degFrom}</span>
-            <span>{"·"}</span>
+            <span>Lot x{lotMult} (lv 1-{Number(degFrom)-1})</span><span>{"·"}</span>
+            <span>Deg. x{degMult} da lv.{degFrom}</span><span>{"·"}</span>
             <span>Step x{stepMult}/lv</span>
           </div>
 
