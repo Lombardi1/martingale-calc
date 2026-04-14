@@ -144,12 +144,12 @@ function EventCard({ event: e }) {
   const name = e.name || e.event || e.title || "Evento";
   const impact = e.impact || e.strength || "";
   const date = e.date ? new Date(e.date) : null;
-  const timeStr = date ? date.toLocaleTimeString("it-IT", { hour:"2-digit", minute:"2-digit" }) : "";
-  const dateStr = date ? date.toLocaleDateString("it-IT", { weekday:"short", day:"numeric", month:"short" }) : "";
+  const timeStr = date ? date.toLocaleTimeString("it-IT", { hour:"2-digit", minute:"2-digit", timeZone:"Europe/Rome" }) : "";
+  const dateStr = date ? date.toLocaleDateString("it-IT", { weekday:"short", day:"numeric", month:"short", timeZone:"Europe/Rome" }) : "";
   const actual = e.actual != null && e.actual !== "" ? e.actual : null;
   const forecast = e.forecast != null && e.forecast !== "" ? e.forecast : null;
   const previous = e.previous != null && e.previous !== "" ? e.previous : null;
-  const isToday = date && date.toDateString() === new Date().toDateString();
+  const todayIT = new Date().toLocaleDateString("it-IT",{timeZone:"Europe/Rome"}); const isToday = date && date.toLocaleDateString("it-IT",{timeZone:"Europe/Rome"}) === todayIT;
   return (
     <div style={{ background:impactBg(impact), border:`1px solid ${impactColor(impact)}33`, borderLeft:`3px solid ${impactColor(impact)}`, borderRadius:10, padding:"10px 12px", marginBottom:8 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8 }}>
@@ -219,7 +219,7 @@ function NewsPage() {
     return () => clearInterval(iv);
   }, [fetchCalendar, fetchNews]);
 
-  const today = new Date().toDateString();
+  const todayStr = new Date().toLocaleDateString("it-IT",{timeZone:"Europe/Rome"});
   const todayEvents = calEvents.filter(e => e.date && new Date(e.date).toDateString() === today);
   const upcomingEvents = calEvents.filter(e => e.date && new Date(e.date).toDateString() !== today);
 
