@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 const LOT_SIZE = 100;
 const MC_LEVEL = 75;
 const LIQ_LEVEL = 50;
-const FF_PROXY = "https://qhabwagcsvvluyvfztmp.supabase.co/functions/v1/ff-calendar-proxy";
+const FF_PROXY = "https://qhabwagcsvvluyvfztmp.supabase.co/functions/v1/cal-usd";
 const NEWS_PROXY = "https://qhabwagcsvvluyvfztmp.supabase.co/functions/v1/gold-news-proxy";
 const GOLD_KW = ["gold","xau","bullion","fed","federal reserve","cpi","inflation","nfp","non-farm","payroll","dollar","dxy","interest rate","treasury","yield","gdp","ppi","powell","fomc","jobs","employment"];
 const USD_KW = ["cpi","nfp","non-farm","fed","fomc","gdp","ppi","retail sales","ism","pmi","interest rate","unemployment","payroll","powell","inflation","jobs","employment"];
