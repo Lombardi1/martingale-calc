@@ -3,12 +3,8 @@ import { useState, useCallback, useEffect, useRef } from "react";
 const LOT_SIZE = 100;
 const MC_LEVEL = 75;
 const LIQ_LEVEL = 50;
-const R2J = "https://api.rss2json.com/v1/api.json?rss_url=";
 const FF_PROXY = "https://qhabwagcsvvluyvfztmp.supabase.co/functions/v1/ff-calendar-proxy";
-const NEWS_FEEDS = [
-  { name: "Investing.com", url: "https://www.investing.com/rss/news_14.rss" },
-  { name: "MarketWatch", url: "https://feeds.marketwatch.com/marketwatch/topstories/" },
-];
+const NEWS_PROXY = "https://qhabwagcsvvluyvfztmp.supabase.co/functions/v1/gold-news-proxy";
 const GOLD_KW = ["gold","xau","bullion","fed","federal reserve","cpi","inflation","nfp","non-farm","payroll","dollar","dxy","interest rate","treasury","yield","gdp","ppi","powell","fomc","jobs","employment"];
 const USD_KW = ["cpi","nfp","non-farm","fed","fomc","gdp","ppi","retail sales","ism","pmi","interest rate","unemployment","payroll","powell","inflation","jobs","employment"];
 const LEV = [
@@ -197,33 +193,16 @@ function NewsPage() {
 
   const fetchNews = useCallback(async () => {
     setNewsStatus("loading");
-    const all = [];
-    for (let fi = 0; fi < NEWS_FEEDS.length; fi++) {
-      const feed = NEWS_FEEDS[fi];
-      try {
-        const r = await fetch(R2J + encodeURIComponent(feed.url) + "&count=20");
-        const d = await r.json();
-        if (d.status === "ok" && Array.isArray(d.items)) {
-          for (let ii = 0; ii < d.items.length; ii++) {
-            const item = d.items[ii];
-            const text = ((item.title||"") + " " + (item.description||"")).toLowerCase();
-            if (GOLD_KW.some(function(k) { return text.includes(k); })) {
-              all.push({
-                title: item.title,
-                link: item.link,
-                pubDate: item.pubDate ? new Date(item.pubDate).getTime() : Date.now(),
-                desc: (item.description||"").replace(/<[^>]+>/g,"").substring(0,200),
-                source: feed.name
-              });
-            }
-          }
-        }
-      } catch(e) {}
+    try {
+      const r = await fetch(NEWS_PROXY);
+      if (!r.ok) throw new Error("status " + r.status);
+      const all = await r.json();
+      setNews(Array.isArray(all) ? all : []);
+      setNewsStatus(all.length > 0 ? "ok" : "empty");
+      setLastUpdate(new Date());
+    } catch(e) {
+      setNewsStatus("error");
     }
-    all.sort(function(a,b) { return b.pubDate - a.pubDate; });
-    setNews(all);
-    setNewsStatus(all.length > 0 ? "ok" : "empty");
-    setLastUpdate(new Date());
   }, []);
 
   useEffect(function() {
